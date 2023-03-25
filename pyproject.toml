@@ -24,4 +24,4 @@ requires-python = ">=3.6"
 packages = "find:"
 
 [project.urls]
-Homepage = "https://biff.ai"
+Homepage = "https://biff.ai/bif-0003"
