@@ -1,11 +1,13 @@
 # gpt.py
 
+import os
 import openai
 import requests
 import json
 from json import JSONDecodeError
 from IPython.core.magic import line_cell_magic, magics_class, Magics
 from IPython.core.getipython import get_ipython
+MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo',
 
 @magics_class
 class GPTMagics(Magics):
@@ -23,7 +25,7 @@ class GPTMagics(Magics):
         }
 
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL_STRING,
             "messages": [{"role": "user", "content": f"{self.prefix_prompt} {query}"}]
         }
 
