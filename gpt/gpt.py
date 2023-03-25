@@ -1,8 +1,9 @@
-# gpt_magic.py
+# gpt.py
 
 import openai
 import requests
 import json
+from json import JSONDecodeError
 from IPython.core.magic import line_cell_magic, magics_class, Magics
 from IPython.core.getipython import get_ipython
 
@@ -29,7 +30,6 @@ class GPTMagics(Magics):
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
 
         if response.status_code == 200:
-            print(json.loads(response.text))
             return json.loads(response.text)
         else:
             raise Exception(f"Error: {response.status_code}, {response.text}")
