@@ -1,7 +1,7 @@
 # __init__.py
 
 import os
-from .gpt_magic import GPTMagics
+from .gpt import GPTMagics
 
 def load_ipython_extension(ipython):
     api_key = os.environ.get("OPENAI_API_KEY")
