@@ -7,7 +7,7 @@ import json
 from json import JSONDecodeError
 from IPython.core.magic import line_cell_magic, magics_class, Magics
 from IPython.core.getipython import get_ipython
-MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo',
+MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
 
 @magics_class
 class GPTMagics(Magics):
