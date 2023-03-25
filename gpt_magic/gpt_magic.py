@@ -12,6 +12,8 @@ class GPTMagics(Magics):
         super().__init__(shell)
         self.api_key = api_key
         openai.api_key = api_key
+        self.prefix_prompt = 'Ignore previous directions. Imagine you are one of the foremost experts on python development and respond
+only with a json dictionary with a key for the explanation and another with only the code. Now please '
 
     def call_openai_api(self, query):
         headers = {
@@ -21,7 +23,7 @@ class GPTMagics(Magics):
 
         data = {
             "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": query}]
+            "messages": [{"role": "user", "content": f"{self.prefix_prompt} {query}"}]
         }
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
@@ -31,15 +33,24 @@ class GPTMagics(Magics):
         else:
             raise Exception(f"Error: {response.status_code}, {response.text}")
 
+    def parse_response(response_content):
+        response = json.loads(response['choices'][0]['message']['content'])
+        explanation = response['explanation']
+        code = response['code']
+
+        # Create a new code cell with the generated code
+        ipython = get_ipython()
+        ipython.set_next_input(code, replace=False)
+	return explanation, code
+
     @line_magic
     def gpt(self, line):
         response = self.call_openai_api(line)
-        generated_code = response['choices'][0]['message']['content']
-        return generated_code
+	explanation, code = parse_response(response)
+	return explanation        
 
     @cell_magic
     def gptcell(self, line, cell):
         response = self.call_openai_api(cell)
-        generated_code = response['choices'][0]['message']['content']
-        return generated_code
-
+	explanation, code = parse_response(response)
+        return explanation
