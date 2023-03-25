@@ -3,7 +3,8 @@
 import openai
 import requests
 import json
-from IPython.core.magic import Magics, magics_class, line_magic, cell_magic
+from IPython.core.magic import line_cell_magic
+from IPython.core.getipython import get_ipython
 
 @magics_class
 class GPTMagics(Magics):
@@ -42,14 +43,9 @@ class GPTMagics(Magics):
         ipython.set_next_input(code, replace=False)
         return explanation, code
 
-    @line_magic
-    def gpt(self, line):
+    @line_cell_magic
+    def gpt(self, line, cell=None):
         response = self.call_openai_api(line)
-        explanation, code = parse_response(response)
+        explanation, code = self.parse_response(response)
         return explanation        
 
-    @cell_magic
-    def gptcell(self, line, cell):
-        response = self.call_openai_api(cell)
-        explanation, code = parse_response(response)
-        return explanation
