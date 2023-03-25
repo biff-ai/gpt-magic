@@ -21,9 +21,6 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
 ]
 
-[project.urls]
-Bug Tracker = "https://github.com/yourusername/gpt-magic/issues"
-
 [options]
 packages = "find:"
 install_requires =
