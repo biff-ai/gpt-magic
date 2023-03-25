@@ -33,8 +33,8 @@ class GPTMagics(Magics):
         else:
             raise Exception(f"Error: {response.status_code}, {response.text}")
 
-    def parse_response(response_content):
-        response = json.loads(response['choices'][0]['message']['content'])
+    def parse_response(self, response_content):
+        response = json.loads(response_content['choices'][0]['message']['content'])
         explanation = response['explanation']
         code = response['code']
 
