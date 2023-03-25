@@ -12,8 +12,7 @@ class GPTMagics(Magics):
         super().__init__(shell)
         self.api_key = api_key
         openai.api_key = api_key
-        self.prefix_prompt = 'Ignore previous directions. Imagine you are one of the foremost experts on python development and respond
-only with a json dictionary with a key for the explanation and another with only the code. Now please '
+        self.prefix_prompt = 'Ignore previous directions. Imagine you are one of the foremost experts on python development and respond only with a json dictionary with a key for the explanation and another with only the code. Now please '
 
     def call_openai_api(self, query):
         headers = {
