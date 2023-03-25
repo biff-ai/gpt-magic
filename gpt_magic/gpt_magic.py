@@ -40,16 +40,16 @@ class GPTMagics(Magics):
         # Create a new code cell with the generated code
         ipython = get_ipython()
         ipython.set_next_input(code, replace=False)
-	return explanation, code
+        return explanation, code
 
     @line_magic
     def gpt(self, line):
         response = self.call_openai_api(line)
-	explanation, code = parse_response(response)
-	return explanation        
+        explanation, code = parse_response(response)
+        return explanation        
 
     @cell_magic
     def gptcell(self, line, cell):
         response = self.call_openai_api(cell)
-	explanation, code = parse_response(response)
+        explanation, code = parse_response(response)
         return explanation
