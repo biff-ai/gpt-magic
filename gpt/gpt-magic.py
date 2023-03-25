@@ -29,6 +29,7 @@ class GPTMagics(Magics):
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
 
         if response.status_code == 200:
+            print(json.loads(response.text))
             return json.loads(response.text)
         else:
             raise Exception(f"Error: {response.status_code}, {response.text}")
