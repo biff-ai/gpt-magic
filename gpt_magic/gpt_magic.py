@@ -3,7 +3,7 @@
 import openai
 import requests
 import json
-from IPython.core.magic import line_cell_magic
+from IPython.core.magic import line_cell_magic, magics_class
 from IPython.core.getipython import get_ipython
 
 @magics_class
