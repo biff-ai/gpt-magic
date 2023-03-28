@@ -14,21 +14,25 @@ MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
 @magics_class
 class GPTMagics(Magics):
 
-    def __init__(self, shell, api_key):
+    def __init__(self, shell, api_key,temperature=1):
         super().__init__(shell)
         self.api_key = api_key
         openai.api_key = api_key
+        self.temperature = temperature
         self.prefix_prompt = 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Respond ONLY with a valid json object (correctly escaped)  with one key called "explanation" with a markdown formatted description of whaat the code doesand another with only the code called "code". Now please '
 
-    def call_openai_api(self, query):
+    def call_openai_api(self, query, temperature = None):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}"
         }
-
+        
+        temperature = temperature or self.temperature
+        
         data = {
             "model": MODEL_STRING,
-            "messages": [{"role": "user", "content": f"{self.prefix_prompt} {query}"}]
+            "messages": [{"role": "user", "content": f"{self.prefix_prompt} {query}"}],
+            "temperature": temperature
         }
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
@@ -40,7 +44,8 @@ class GPTMagics(Magics):
 
     def parse_response(self, response_content):
         try:
-            response = json.loads(response_content['choices'][0]['message']['content'])
+            r = self.extract_json_object(response_content['choices'][0]['message']['content'])
+            response = json.loads(r)
             explanation = response['explanation']
             code = response['code']
 
@@ -53,7 +58,37 @@ class GPTMagics(Magics):
  
     @line_cell_magic
     def gpt(self, line, cell=None):
-        response = self.call_openai_api(line)
+        # Split the line into arguments and options
+        args = line.split()
+        kwargs = {}
+        if "-t" in args:
+            temp_idx = args.index("-t") + 1
+            if temp_idx < len(args):
+                kwargs["temperature"] = float(args[temp_idx])
+
+        query = " ".join(arg for arg in args if not arg.startswith("-"))
+
+        response = self.call_openai_api(query, **kwargs)
         explanation, code = self.parse_response(response)
         display(Markdown(explanation))
+        
+    def extract_json_object(self, s):
+        open_braces = 0
+        start = -1
+        end = -1
 
+        for i, c in enumerate(s):
+            if c == '{':
+                if start == -1:
+                    start = i
+                open_braces += 1
+            elif c == '}':
+                open_braces -= 1
+                if open_braces == 0:
+                    end = i + 1
+                    break
+
+        if start != -1 and end != -1:
+            return s[start:end]
+        else:
+            return None
