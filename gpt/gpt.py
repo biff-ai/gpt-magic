@@ -45,7 +45,7 @@ class GPTMagics(Magics):
         super().__init__(shell)
         self.api_key = api_key or os.environ['OPENAI_API_KEY']
         openai.api_key = self.api_key
-        self.prefix_system = 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Respond ONLY with a valid json object (correctly escaped) with one key called "explanation" with a markdown formatted description of what the code does and another with only the code called "code". All code should be written in the code part of the JSON. None should be outside.'
+        self.prefix_system = 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block. Be succinct. Be concise.'
         self.prefix_user = 'Now please '
         self.model = MODEL_STRING
         self.temperature = 0
@@ -117,37 +117,6 @@ class GPTMagics(Magics):
             return s[start:end]
         else:
             return None
-
-    def parse_response(self, response_content: str, execute_code: bool = False) -> Tuple[str, str]:
-        """
-        Parses the response from the OpenAI API, extracts the explanation and code, 
-        and inserts the generated code into a new code cell.
-
-        Args:
-            response_content (str): The JSON-formatted response content from the GPT-3 API.
-            execute_code (bool, optional): Whether to execute the generated code. Defaults to False.
-
-        Returns:
-            Tuple[str, str]: A tuple containing the explanation and the code.
-
-        Raises:
-            JSONDecodeError: If the response content cannot be decoded.
-        """
-        try:
-            response = json.loads(response_content)
-            explanation = response['explanation']
-            code = response['code']
-
-            # Create a new code cell with the generated code
-            ipython = get_ipython()
-            ipython.set_next_input(code, replace=False)
-            
-            if execute_code:
-                ipython.run_cell(code)
-
-            return explanation, code
-        except json.JSONDecodeError:
-            print(f"Failed to decode: {response_content}")
             
     def call_openai(self, data: dict) -> dict:
         """
@@ -212,8 +181,11 @@ class GPTMagics(Magics):
         feedback = response['choices'][0]['message']
         
         self.current_query.append(feedback)
-        json_response = self.extract_json_object(feedback['content'])
         
+        extract = extract_code_and_text(feedback['content'])
+
+        cells = process_cells(extract)
+        return insert_cells_ahead(cells)
         #exp,code = self.parse_response(json_response)
         #display(Markdown(exp))
         
@@ -282,28 +254,43 @@ def process_cells(parsed_output):
 
 def extract_code_and_text(response):
     result = []
-    code_block_pattern = re.compile(r"```(?:\w+\n)?(?P<code>[\s\S]*?)```")
-    code_blocks = code_block_pattern.finditer(response)
+    code_start = "```"
+    code_end = "```"
+    in_code_block = False
+    buffer = ""
+    code_buffer = ""
+    language = ""
 
-    while code_blocks or response.strip():
-        if code_blocks:
-            code_block_match = next(code_blocks, None)
-            if code_block_match is None:
-                break
-            code_block = code_block_match.group("code")
-            code_index_start = code_block_match.start()
-            code_index_end = code_block_match.end()
-            text_block = response[:code_index_start].strip()
-            response = response[code_index_end:]
+    while response:
+        if not in_code_block and response.startswith(code_start):
+            in_code_block = True
+            response = response[len(code_start):]
+            language_end = response.find("\n")
+            language = response[:language_end].strip()
+            response = response[language_end:]
+            buffer = buffer.strip()
+            if buffer:
+                result.append(("text", buffer))
+                buffer = ""
+        elif in_code_block and response.startswith(code_end):
+            in_code_block = False
+            response = response[len(code_end):]
+            code_buffer = code_buffer.strip()
+            if code_buffer:
+                result.append(("code", code_buffer))
+                code_buffer = ""
         else:
-            text_block = response.strip()
-            response = ""
+            char = response[0]
+            response = response[1:]
+            if in_code_block:
+                code_buffer += char
+            else:
+                buffer += char
 
-        if text_block:
-            result.append(("text", text_block))
-
-        if code_blocks:
-            result.append(("code", code_block.strip()))
+    # Append the remaining text outside of the code blocks
+    buffer = buffer.strip()
+    if buffer:
+        result.append(("text", buffer))
 
     return result
 
