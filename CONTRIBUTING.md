@@ -23,9 +23,9 @@ First clone the repo:
 
 ```git clone https://github.com/biff-ai/gpt-magic.git```
 
-Next open the repo and install dependencies:
+Next open the repo and install dependencies in the dev environment:
 
-```cd gpt-magic && pip install -e .```
+```cd gpt-magic && pip install -e .[dev]```
 
 ### Codebase structure
 GPT-magic currently has one file where the magic happens
@@ -33,7 +33,11 @@ GPT-magic currently has one file where the magic happens
 
 ### Unit testing
 
-To come in the future. 
+Unit tests use `pytest`.
+You will need to create a `.env` file in the root directory containing the following for the unit tests to run:
+`OPENAI_API_TOKEN=<your api token>`
+
+This will only run basic health and validation checks (e.g. your token is valid), but will not execute in any queries that cost $. 
 
 ### Linting
 
