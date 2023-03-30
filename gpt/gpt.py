@@ -5,11 +5,10 @@ import openai
 import requests
 import json
 import argparse
-from json import JSONDecodeError
 from IPython.display import display, Markdown
 from IPython.core.magic import line_cell_magic, magics_class, Magics
 from IPython.core.getipython import get_ipython
-from typing import Optional
+from typing import Optional, Tuple
 
 MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
 
