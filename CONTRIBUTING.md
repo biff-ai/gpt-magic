@@ -25,7 +25,7 @@ First clone the repo:
 
 Next open the repo and install dependencies:
 
-```cd gpt-magic && pip install -e```
+```cd gpt-magic && pip install -e .```
 
 ### Codebase structure
 GPT-magic currently has one file where the magic happens
