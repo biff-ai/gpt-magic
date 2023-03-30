@@ -10,6 +10,10 @@ from IPython.core.magic import line_cell_magic, magics_class, Magics
 from IPython.core.getipython import get_ipython
 from typing import Optional, Tuple
 
+from IPython.display import display, Javascript
+import base64
+import re
+
 MODEL_STRING = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
 
 @magics_class
@@ -209,8 +213,9 @@ class GPTMagics(Magics):
         
         self.current_query.append(feedback)
         json_response = self.extract_json_object(feedback['content'])
-        exp,code = self.parse_response(json_response)
-        display(Markdown(exp))
+        
+        #exp,code = self.parse_response(json_response)
+        #display(Markdown(exp))
         
     
     @line_cell_magic
@@ -244,3 +249,61 @@ class GPTMagics(Magics):
         
         # Run the OpenAI API request with the provided query and chat memory option
         self.run(query, chat_memory)
+
+def insert_cells_ahead(cells_data, n=0):
+    for i, (cell_type, content) in reversed(list(enumerate(cells_data))):
+        content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+        display(Javascript('''
+            function insert_cells() {
+                var current_cell_index = Jupyter.notebook.get_cells().indexOf(Jupyter.notebook.get_selected_cell());
+                var new_cell = Jupyter.notebook.insert_cell_at_index("''' + cell_type + '''", current_cell_index + ''' + str(n) + ''');
+                new_cell.set_text(atob("''' + content_b64 + '''"));
+                if("''' + cell_type + '''" === "markdown"){
+                    new_cell.render();
+                }
+                if(''' + str(i) + ''' === 0){
+                    new_cell.focus_cell();
+                }
+            }
+            setTimeout(insert_cells, 100);
+        '''))
+
+def process_cells(parsed_output):
+    cells = []
+
+    for i,j in parsed_output:
+        if i == 'text':
+            cells.append(('markdown',j))
+        if i == 'code':
+            cells.append(('code',j))
+    cells = cells[::-1]
+    return cells
+
+
+def extract_code_and_text(response):
+    result = []
+    code_block_pattern = re.compile(r"```(?:\w+\n)?(?P<code>[\s\S]*?)```")
+    code_blocks = code_block_pattern.finditer(response)
+
+    while code_blocks or response.strip():
+        if code_blocks:
+            code_block_match = next(code_blocks, None)
+            if code_block_match is None:
+                break
+            code_block = code_block_match.group("code")
+            code_index_start = code_block_match.start()
+            code_index_end = code_block_match.end()
+            text_block = response[:code_index_start].strip()
+            response = response[code_index_end:]
+        else:
+            text_block = response.strip()
+            response = ""
+
+        if text_block:
+            result.append(("text", text_block))
+
+        if code_blocks:
+            result.append(("code", code_block.strip()))
+
+    return result
+
