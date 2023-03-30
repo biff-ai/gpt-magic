@@ -4,7 +4,7 @@ A Jupyter/IPython magic command for generating code using GPT
 ## Example
 Generating code with GPT by loading the extension and prefixing your line with `%gpt`.
 
-![Alt text](GPTMagic.gif)
+![Alt text](image/GPTMagic.gif)
 
 ## Install
 
