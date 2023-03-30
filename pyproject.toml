@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gpt-magic"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Jupyter/IPython magic command for generating code using GPT."
 authors = [{name = "BIFF", email = "info@biff.ai"}]
 license = { file = "LICENSE" }
@@ -22,6 +22,10 @@ requires-python = ">=3.6"
 
 [options]
 packages = "find:"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "requests-mock", "notebook", "python-dotenv"]
+dev = ["pytest", "pytest-mock", "requests-mock", "notebook", "python-dotenv"]
 
 [project.urls]
 Homepage = "https://biff.ai/bif-0003"
