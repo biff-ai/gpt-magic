@@ -8,12 +8,12 @@ class TestGPTMagics:
     def test_init(self, gpt_magic):
         assert gpt_magic.model == 'gpt-3.5-turbo'
         assert gpt_magic.temperature == 0
-        assert gpt_magic.prefix_system == 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Respond ONLY with a valid json object (correctly escaped) with one key called "explanation" with a markdown formatted description of what the code does and another with only the code called "code". All code should be written in the code part of the JSON. None should be outside.'
+        assert gpt_magic.prefix_system == 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block.'
         assert gpt_magic.prefix_user == 'Now please '
         assert gpt_magic.current_query is None
 
     def test_init_chat(self, gpt_magic, array_query):
-        assert gpt_magic.init_chat(array_query) == [{'role': 'system', 'content': 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Respond ONLY with a valid json object (correctly escaped) with one key called "explanation" with a markdown formatted description of what the code does and another with only the code called "code". All code should be written in the code part of the JSON. None should be outside.'},
+        assert gpt_magic.init_chat(array_query) == [{'role': 'system', 'content': 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block.'},
                 {'role': 'user','content': f'Now please  {array_query}'}]
         assert gpt_magic.init_chat('test') == [{"role": "system", "content": f"{gpt_magic.prefix_system}"},\
                      {"role": "user", "content": f"{gpt_magic.prefix_user} test"}]
@@ -26,7 +26,7 @@ class TestGPTMagics:
         assert gpt_magic.prepare_payload(initial_chatlog) == {'model': 'gpt-3.5-turbo',
             'temperature': 0,
             'messages': [{'role': 'system',
-            'content': 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Respond ONLY with a valid json object (correctly escaped) with one key called "explanation" with a markdown formatted description of what the code does and another with only the code called "code". All code should be written in the code part of the JSON. None should be outside.'},
+            'content': 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block.'},
             {'role': 'user',
             'content': 'Now please  please write a query that calculates the average from an array'}]}
     

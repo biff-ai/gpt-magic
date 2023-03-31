@@ -45,7 +45,7 @@ class GPTMagics(Magics):
         super().__init__(shell)
         self.api_key = api_key or os.environ['OPENAI_API_KEY']
         openai.api_key = self.api_key
-        self.prefix_system = 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block. Be succinct. Be concise.'
+        self.prefix_system = 'Ignore previous directions. Imagine you are one of the foremost experts on python development. Only respond with a brief explanation and python code block.'
         self.prefix_user = 'Now please '
         self.model = MODEL_STRING
         self.temperature = 0
@@ -87,36 +87,6 @@ class GPTMagics(Magics):
             return current_chat
         else:
             return self.init_chat(query)
-    
-    def extract_json_object(self, s: str) -> Optional[str]:
-        """
-        Extracts the first JSON object from a given string.
-
-        Args:
-            s (str): The input string to search for a JSON object.
-
-        Returns:
-            Optional[str]: The extracted JSON object as a string, or None if not found.
-        """
-        open_braces = 0
-        start = -1
-        end = -1
-
-        for i, c in enumerate(s):
-            if c == '{':
-                if start == -1:
-                    start = i
-                open_braces += 1
-            elif c == '}':
-                open_braces -= 1
-                if open_braces == 0:
-                    end = i + 1
-                    break
-
-        if start != -1 and end != -1:
-            return s[start:end]
-        else:
-            return None
             
     def call_openai(self, data: dict) -> dict:
         """
@@ -185,9 +155,14 @@ class GPTMagics(Magics):
         extract = extract_code_and_text(feedback['content'])
 
         cells = process_cells(extract)
-        return insert_cells_ahead(cells)
-        #exp,code = self.parse_response(json_response)
-        #display(Markdown(exp))
+
+        if environment() == 'jupyter':
+            return ipynotebook(extract)
+        elif environment() == 'jupyter-lab':
+            return jupyterlab(extract)
+        else:
+            raise ValueError(f"Unsupported environment: {program}. Must be run in Jupyter-lab or Jupyter notebook")
+
         
     
     @line_cell_magic
@@ -222,6 +197,7 @@ class GPTMagics(Magics):
         # Run the OpenAI API request with the provided query and chat memory option
         self.run(query, chat_memory)
 
+
 def insert_cells_ahead(cells_data, n=0):
     for i, (cell_type, content) in reversed(list(enumerate(cells_data))):
         content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
@@ -240,17 +216,35 @@ def insert_cells_ahead(cells_data, n=0):
             setTimeout(insert_cells, 100);
         '''))
 
-def process_cells(parsed_output):
-    cells = []
+def create_new_cell(contents, cell_type='Code'):
+    if cell_type not in ['code', 'markdown']:
+        raise ValueError("Invalid cell_type. Choose 'code' or 'markdown'.")
 
-    for i,j in parsed_output:
-        if i == 'text':
-            cells.append(('markdown',j))
-        if i == 'code':
-            cells.append(('code',j))
-    cells = cells[::-1]
-    return cells
+    from IPython.core.getipython import get_ipython
+    shell = get_ipython()
+    payload = dict(
+        source='set_next_input',
+        text=contents,
+        replace=False,
+        cell_type=cell_type,
+    )
+    shell.payload_manager.write_payload(payload, single=False)
 
+def jupyterlab(extract):
+    for i,j in enumerate(extract[:2]):
+        if i==0 and j[0]=='markdown':
+            display(Markdown(j[1]))
+        else:
+            create_new_cell(j[1],j[0])
+
+def ipynotebook(extract):
+    return insert_cells_ahead(extract)
+
+def environment():
+    env = os.environ
+    shell = 'shell'
+    program = os.path.basename(env['_'])
+    return program
 
 def extract_code_and_text(response):
     result = []
@@ -270,7 +264,7 @@ def extract_code_and_text(response):
             response = response[language_end:]
             buffer = buffer.strip()
             if buffer:
-                result.append(("text", buffer))
+                result.append(("markdown", buffer))
                 buffer = ""
         elif in_code_block and response.startswith(code_end):
             in_code_block = False
@@ -290,7 +284,17 @@ def extract_code_and_text(response):
     # Append the remaining text outside of the code blocks
     buffer = buffer.strip()
     if buffer:
-        result.append(("text", buffer))
+        result.append(("markdown", buffer))
 
     return result
 
+def process_cells(parsed_output):
+    cells = []
+
+    for i,j in parsed_output:
+        if i == 'text':
+            cells.append(('markdown',j))
+        if i == 'code':
+            cells.append(('code',j))
+    cells = cells[::-1]
+    return 
