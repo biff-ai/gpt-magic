@@ -154,10 +154,8 @@ class GPTMagics(Magics):
         
         extract = extract_code_and_text(feedback['content'])
 
-        cells = process_cells(extract)
-
         if environment() == 'jupyter':
-            return ipynotebook(extract)
+            return ipynotebook(extract[::-1])
         elif environment() == 'jupyter-lab':
             return jupyterlab(extract)
         else:
@@ -198,6 +196,7 @@ class GPTMagics(Magics):
         self.run(query, chat_memory)
 
 
+#Insert cells for notebook.
 def insert_cells_ahead(cells_data, n=0):
     for i, (cell_type, content) in reversed(list(enumerate(cells_data))):
         content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
@@ -216,6 +215,7 @@ def insert_cells_ahead(cells_data, n=0):
             setTimeout(insert_cells, 100);
         '''))
 
+#Create new cell
 def create_new_cell(contents, cell_type='Code'):
     if cell_type not in ['code', 'markdown']:
         raise ValueError("Invalid cell_type. Choose 'code' or 'markdown'.")
@@ -230,6 +230,7 @@ def create_new_cell(contents, cell_type='Code'):
     )
     shell.payload_manager.write_payload(payload, single=False)
 
+#Function to run for jupyterlab
 def jupyterlab(extract):
     for i,j in enumerate(extract[:2]):
         if i==0 and j[0]=='markdown':
@@ -237,15 +238,18 @@ def jupyterlab(extract):
         else:
             create_new_cell(j[1],j[0])
 
+#Function to run for ipynotebook
 def ipynotebook(extract):
     return insert_cells_ahead(extract)
 
+#Get the environment (ipynotebook or jupyter)
 def environment():
     env = os.environ
     shell = 'shell'
     program = os.path.basename(env['_'])
     return program
 
+#Extract code from text.
 def extract_code_and_text(response):
     result = []
     code_start = "```"
